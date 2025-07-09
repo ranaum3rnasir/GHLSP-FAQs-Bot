@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-gray-900 text-white">
+<head>
+  <meta charset="UTF-8" />
+  <title>PDF RAG Chatbot</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="flex flex-col h-screen">
+
+  <header class="p-4 bg-gray-800 text-xl font-semibold text-center">
+    📄 PDF RAG Chatbot
+  </header>
+
+  <main class="flex flex-col flex-1 items-center justify-center p-6">
+    <div class="w-full max-w-2xl space-y-4">
+      
+      <div>
+        <label class="block mb-2 text-sm">Upload a PDF</label>
+        <input type="file" id="pdfFile" class="file:bg-blue-600 file:text-white file:rounded file:px-4 file:py-2 w-full" />
+      </div>
+
+      <div>
+        <input type="text" id="queryInput" placeholder="Enter your question..." class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded" />
+      </div>
+
+      <button id="askBtn" class="w-full py-2 bg-blue-600 rounded hover:bg-blue-500">Ask</button>
+
+      <div id="responseArea" class="bg-gray-800 p-4 rounded min-h-[150px] border border-gray-700 mt-4 overflow-auto"></div>
+    </div>
+  </main>
+
+  <script>
+    document.getElementById('askBtn').addEventListener('click', async () => {
+      const file = document.getElementById('pdfFile').files[0];
+      const query = document.getElementById('queryInput').value;
+      const responseArea = document.getElementById('responseArea');
+
+      if (!file || !query) {
+        responseArea.innerHTML = "❗ Please upload a PDF and enter a query.";
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("query", query);
+
+      responseArea.innerHTML = "⏳ Processing...";
+
+      try {
+        const res = await fetch("http://127.0.0.1:5000/query", {
+          method: "POST",
+          body: formData
+        });
+
+        const data = await res.json();
+        responseArea.innerHTML = `<strong>🤖 Response:</strong><br/>${data.answer}`;
+      } catch (err) {
+        responseArea.innerHTML = "❌ Error: " + err;
+      }
+    });
+  </script>
+
+</body>
+</html>
