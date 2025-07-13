@@ -32,36 +32,21 @@ os.makedirs(EMBEDDING_DIR, exist_ok=True)
 
 @app.route("/")
 def index():
-    return render_template("indexDynamicRag.html")
-
-def extract_text_from_pdf(pdf_path):
-    reader = PdfReader(pdf_path)
-    return "\n".join([page.extract_text() or "" for page in reader.pages])
-
-def get_chunks(text):
-    splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=0)
-    return splitter.split_text(text)
+    print("Received query request")
+    return render_template("index.html")
 
 @app.route("/query", methods=["POST"])
 def query():
-    file = request.files.get("file")
+    print("Received query request")
     user_query = request.form.get("query")
+    print("Received query request")
 
-    if not file or not user_query:
-        return jsonify({"error": "Missing file or query"}), 400
+    if not user_query:
+        return jsonify({"error": "Missing query"}), 400
 
-    file_path = os.path.join(UPLOAD_DIR, file.filename) # type: ignore
-    if not os.path.exists(file_path):
-        file.save(file_path)
-        text = extract_text_from_pdf(file_path)
-        chunks = get_chunks(text)
-        docs = [Document(page_content=chunk, metadata={"source": file.filename}) for chunk in chunks]
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=SecretStr(decoded_api_key))
-        db = FAISS.from_documents(docs, embeddings)
-        db.save_local(EMBEDDING_DIR)
-    else:
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=SecretStr(decoded_api_key))
-        db = FAISS.load_local(EMBEDDING_DIR, embeddings, allow_dangerous_deserialization=True)
+
+    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=SecretStr(decoded_api_key))
+    db = FAISS.load_local(EMBEDDING_DIR, embeddings, allow_dangerous_deserialization=True)
 
     retriever = db.as_retriever()
     matched_docs = retriever.get_relevant_documents(user_query, k=4)
